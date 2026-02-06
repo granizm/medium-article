@@ -1,0 +1,31 @@
+name: Create Draft on Medium
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'posts/**'
+
+jobs:
+  draft:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Attempt to create draft on Medium
+        env:
+          MEDIUM_TOKEN: ${{ secrets.MEDIUM_TOKEN }}
+        run: ./scripts/publish.sh draft
+        continue-on-error: true
+
+      - name: Notify Discord
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: |
+          if [ -n "$DISCORD_WEBHOOK" ]; then
+            curl -X POST "$DISCORD_WEBHOOK" \
+              -H "Content-Type: application/json" \
+              -d "{\"content\": \"⚠️ Medium下書きを試行しました（API非推奨）\\nPR: ${{ github.event.pull_request.html_url }}\\n手動での確認をお願いします。\"}"
+          fi
